@@ -22,8 +22,18 @@ class ResultScreen extends StatelessWidget {
     final title = switch (winner) {
       WinnerSide.civilian => 'Civilian Menang!',
       WinnerSide.undercover => 'Undercover Menang!',
-      WinnerSide.mrWhite => 'Mr. White Menang!',
+      WinnerSide.mrWhite => 'Mr. White & Undercover Menang!',
       WinnerSide.unknown => 'Game Selesai',
+    };
+
+    final subtitle = switch (winner) {
+      WinnerSide.civilian =>
+        'Civilian berhasil menemukan semua penyusup.',
+      WinnerSide.undercover =>
+        'Undercover berhasil bertahan sampai akhir.',
+      WinnerSide.mrWhite =>
+        'Mr. White berhasil menebak kata Civilian. Mr. White dan Undercover mendapat poin.',
+      WinnerSide.unknown => 'Permainan telah selesai.',
     };
 
     return Scaffold(
@@ -39,31 +49,51 @@ class ResultScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       const Text(
-                        '🏆',
-                        style: TextStyle(fontSize: 78),
+                        '??',
+                        style: TextStyle(fontSize: 70),
                       ),
                       Text(
                         title,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.black,
-                          fontSize: 30,
+                          fontSize: 29,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Text(
-                        'Kata Civilian: ${game.civilianWord}',
+                        subtitle,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w900,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      Text(
-                        'Kata Undercover: ${game.undercoverWord}',
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w900,
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.blue.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Kata Civilian: ${game.civilianWord}',
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'Kata Undercover: ${game.undercoverWord}',
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -83,14 +113,31 @@ class ResultScreen extends StatelessWidget {
                             ),
                           ),
                           subtitle: Text(
-                            '${p.role.label} • ${p.word ?? "-"}',
+                            '${p.role.label} � ${p.word ?? "-"}',
                             style: const TextStyle(
                               color: Colors.black54,
                             ),
                           ),
-                          trailing: Icon(
-                            p.isAlive ? Icons.favorite : Icons.close,
-                            color: p.isAlive ? AppTheme.green : Colors.red,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: p.points > 0
+                                  ? AppTheme.green.withValues(alpha: 0.18)
+                                  : Colors.black.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '+${p.points} poin',
+                              style: TextStyle(
+                                color: p.points > 0
+                                    ? Colors.green.shade800
+                                    : Colors.black45,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                           ),
                         ),
                     ],

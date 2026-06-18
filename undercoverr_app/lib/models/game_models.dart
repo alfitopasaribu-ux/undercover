@@ -68,6 +68,7 @@ class Player {
     this.photoBytes,
     this.word,
     this.isAlive = true,
+    this.points = 0,
   });
 
   String name;
@@ -76,6 +77,7 @@ class Player {
   Uint8List? photoBytes;
   String? word;
   bool isAlive;
+  int points;
 }
 
 class GameData {

@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/player_avatar.dart';
+import 'elimination_result_screen.dart';
 import 'result_screen.dart';
 
 class PlayScreen extends StatefulWidget {
@@ -23,16 +24,10 @@ class PlayScreen extends StatefulWidget {
 class _PlayScreenState extends State<PlayScreen> {
   int round = 1;
   bool alreadyFinishing = false;
+  bool pointsAwarded = false;
 
   @override
   Widget build(BuildContext context) {
-    final winner = widget.game.checkWinner();
-
-    if (winner != WinnerSide.unknown && !alreadyFinishing) {
-      alreadyFinishing = true;
-      Future.microtask(() => finishGame(winner));
-    }
-
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
@@ -119,7 +114,9 @@ class _PlayScreenState extends State<PlayScreen> {
                           ),
                         ),
                         subtitle: Text(
-                          p.isAlive ? 'Masih bermain' : 'Tereleminasi',
+                          p.isAlive
+                              ? 'Masih bermain • ${p.points} poin'
+                              : 'Tereleminasi • ${p.points} poin',
                         ),
                         trailing: p.isAlive
                             ? const Icon(
@@ -133,7 +130,7 @@ class _PlayScreenState extends State<PlayScreen> {
                   ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: openVoting,
+                  onPressed: alreadyFinishing ? null : openVoting,
                   icon: const Icon(Icons.how_to_vote),
                   label: const Text('Voting / Eliminasi'),
                 ),
@@ -206,74 +203,166 @@ class _PlayScreenState extends State<PlayScreen> {
     );
   }
 
-  void eliminatePlayer(Player player) {
+  Future<void> eliminatePlayer(Player player) async {
+    if (alreadyFinishing) return;
+
     if (player.role == PlayerRole.mrWhite) {
-      askMrWhiteGuess(player);
+      await askMrWhiteGuess(player);
       return;
     }
 
     setState(() {
       player.isAlive = false;
-      round++;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${player.name} adalah ${player.role.label}'),
+    await showEliminationAnimation(player);
+
+    if (!mounted) return;
+
+    final winner = widget.game.checkWinner();
+
+    if (winner != WinnerSide.unknown) {
+      await finishGame(winner);
+      return;
+    }
+
+    setState(() {
+      round++;
+    });
+  }
+
+  Future<void> askMrWhiteGuess(Player player) async {
+    final controller = TextEditingController();
+
+    final guessedCorrectly = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text(
+                'Mr. White Tereliminasi',
+                style: TextStyle(color: Colors.black),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Mr. White punya satu kesempatan menebak kata Civilian.',
+                    style: TextStyle(color: Colors.black87),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Tebak kata Civilian',
+                      hintText: 'Contoh: Susu',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Lewati'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final guess = controller.text.trim().toLowerCase();
+                    final answer =
+                        widget.game.civilianWord.trim().toLowerCase();
+
+                    Navigator.pop(context, guess == answer);
+                  },
+                  child: const Text('Kirim'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    controller.dispose();
+
+    if (!mounted) return;
+
+    setState(() {
+      player.isAlive = false;
+    });
+
+    if (guessedCorrectly) {
+      await finishGame(WinnerSide.mrWhite);
+      return;
+    }
+
+    await showEliminationAnimation(player);
+
+    if (!mounted) return;
+
+    final winner = widget.game.checkWinner();
+
+    if (winner != WinnerSide.unknown) {
+      await finishGame(winner);
+      return;
+    }
+
+    setState(() {
+      round++;
+    });
+  }
+
+  Future<void> showEliminationAnimation(Player player) async {
+    await Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        pageBuilder: (_, __, ___) {
+          return EliminationResultScreen(player: player);
+        },
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            ),
+            child: child,
+          );
+        },
       ),
     );
   }
 
-  void askMrWhiteGuess(Player player) {
-    final controller = TextEditingController();
+  void awardPoints(WinnerSide winner) {
+    if (pointsAwarded) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text('Mr. White Tereliminasi'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Tebak kata Civilian',
-              hintText: 'Contoh: Pantai',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  player.isAlive = false;
-                  round++;
-                });
-              },
-              child: const Text('Lewati'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final guess = controller.text.trim().toLowerCase();
-                Navigator.pop(context);
+    for (final player in widget.game.players) {
+      if (winner == WinnerSide.civilian &&
+          player.role == PlayerRole.civilian) {
+        player.points += 1;
+      }
 
-                if (guess == widget.game.civilianWord.toLowerCase()) {
-                  finishGame(WinnerSide.mrWhite);
-                } else {
-                  setState(() {
-                    player.isAlive = false;
-                    round++;
-                  });
-                }
-              },
-              child: const Text('Kirim'),
-            ),
-          ],
-        );
-      },
-    );
+      if (winner == WinnerSide.undercover &&
+          player.role == PlayerRole.undercover) {
+        player.points += 1;
+      }
+
+      if (winner == WinnerSide.mrWhite &&
+          (player.role == PlayerRole.mrWhite ||
+              player.role == PlayerRole.undercover)) {
+        player.points += 1;
+      }
+    }
+
+    pointsAwarded = true;
   }
 
   Future<void> finishGame(WinnerSide winner) async {
+    if (alreadyFinishing) return;
+
+    setState(() {
+      alreadyFinishing = true;
+      awardPoints(winner);
+    });
+
     if (widget.game.gameId != null) {
       try {
         await ApiService().finishGame(
