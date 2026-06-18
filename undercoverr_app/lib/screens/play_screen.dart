@@ -26,6 +26,14 @@ class _PlayScreenState extends State<PlayScreen> {
   bool alreadyFinishing = false;
   bool pointsAwarded = false;
 
+  int addTenPoint(int currentPoint) {
+    final newPoint = currentPoint + 10;
+    if (newPoint > 10000) {
+      return 10000;
+    }
+    return newPoint;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,10 +74,7 @@ class _PlayScreenState extends State<PlayScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           infoBox('Civilian', '${widget.game.aliveCivilian}'),
-                          infoBox(
-                            'Undercover',
-                            '${widget.game.aliveUndercover}',
-                          ),
+                          infoBox('Undercover', '${widget.game.aliveUndercover}'),
                           infoBox('Mr. White', '${widget.game.aliveMrWhite}'),
                         ],
                       ),
@@ -115,8 +120,8 @@ class _PlayScreenState extends State<PlayScreen> {
                         ),
                         subtitle: Text(
                           p.isAlive
-                              ? 'Masih bermain • ${p.points} poin'
-                              : 'Tereleminasi • ${p.points} poin',
+                              ? 'Masih bermain â€¢ ${p.points} poin'
+                              : 'Tereleminasi â€¢ ${p.points} poin',
                         ),
                         trailing: p.isAlive
                             ? const Icon(
@@ -269,8 +274,7 @@ class _PlayScreenState extends State<PlayScreen> {
                 FilledButton(
                   onPressed: () {
                     final guess = controller.text.trim().toLowerCase();
-                    final answer =
-                        widget.game.civilianWord.trim().toLowerCase();
+                    final answer = widget.game.civilianWord.trim().toLowerCase();
 
                     Navigator.pop(context, guess == answer);
                   },
@@ -337,18 +341,18 @@ class _PlayScreenState extends State<PlayScreen> {
     for (final player in widget.game.players) {
       if (winner == WinnerSide.civilian &&
           player.role == PlayerRole.civilian) {
-        player.points += 1;
+        player.points = addTenPoint(player.points);
       }
 
       if (winner == WinnerSide.undercover &&
           player.role == PlayerRole.undercover) {
-        player.points += 1;
+        player.points = addTenPoint(player.points);
       }
 
       if (winner == WinnerSide.mrWhite &&
           (player.role == PlayerRole.mrWhite ||
               player.role == PlayerRole.undercover)) {
-        player.points += 1;
+        player.points = addTenPoint(player.points);
       }
     }
 
