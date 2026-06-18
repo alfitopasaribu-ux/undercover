@@ -72,6 +72,11 @@ app.get('/api/words/random', async (req, res) => {
       FROM word_pairs
       WHERE lang = ${lang}
       AND pack = ${pack}
+      AND civilian_word IS NOT NULL
+      AND undercover_word IS NOT NULL
+      AND TRIM(civilian_word) <> ''
+      AND TRIM(undercover_word) <> ''
+      AND LOWER(TRIM(civilian_word)) <> LOWER(TRIM(undercover_word))
       ORDER BY random()
       LIMIT 1
     `;
@@ -131,6 +136,11 @@ app.post('/api/games', async (req, res) => {
       FROM word_pairs
       WHERE lang = ${lang}
       AND pack = ${pack}
+      AND civilian_word IS NOT NULL
+      AND undercover_word IS NOT NULL
+      AND TRIM(civilian_word) <> ''
+      AND TRIM(undercover_word) <> ''
+      AND LOWER(TRIM(civilian_word)) <> LOWER(TRIM(undercover_word))
       ORDER BY random()
       LIMIT 1
     `;
@@ -281,3 +291,4 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
