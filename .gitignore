@@ -1,0 +1,22 @@
+# Flutter
+undercoverr_app/.dart_tool/
+undercoverr_app/.packages
+undercoverr_app/build/
+undercoverr_app/.flutter-plugins
+undercoverr_app/.flutter-plugins-dependencies
+undercoverr_app/.metadata
+
+# Android/iOS build
+undercoverr_app/android/.gradle/
+undercoverr_app/ios/Pods/
+
+# Node backend
+undercoverr_backend/node_modules/
+undercoverr_backend/.env
+undercoverr_backend/.vercel/
+
+# General
+.env
+*.log
+.DS_Store
+.vscode/
